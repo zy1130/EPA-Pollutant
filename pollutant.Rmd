@@ -1,0 +1,250 @@
+---
+title: "Untitled"
+author: "zy"
+date: "1/10/2024"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(xlsx)
+library(janitor)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+```
+
+```{r}
+setwd("C:/Users/hp/Desktop/ozone/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+Ozone <- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE) %>%
+    mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+Ozone
+
+ozone_county=
+  Ozone%>%
+  janitor::clean_names()%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(Ozone=mean(x1st_max_value))
+ozone_county
+#1980-2023 Ozone by county
+ozone_CBSA=
+  Ozone%>%
+  janitor::clean_names()%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(Ozone=mean(x1st_max_value))
+ozone_CBSA
+#1980-2023 Ozone by CBSA
+
+
+
+```
+
+```{r}
+setwd("C:/Users/hp/Desktop/SO2/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+SO2 <- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE)%>%
+  mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+SO2
+
+SO2_county=
+  SO2%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="3-HR BLK AVG")%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(SO2=mean(x1st_max_value))
+SO2_county
+#1980-2023 SO2 by county
+
+SO2_CBSA=
+  SO2%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="3-HR BLK AVG")%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(SO2=mean(x1st_max_value))
+SO2_CBSA
+#1980-2023 SO2 by CBSA
+```
+```{r}
+setwd("C:/Users/hp/Desktop/NO2/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+NO2 <- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE) %>%
+    mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+NO2
+
+NO2_county=
+  NO2%>%
+  janitor::clean_names()%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(NO2=mean(x1st_max_value))
+NO2_county
+#1980-2023 CO by county
+
+NO2_CBSA=
+  NO2%>%
+  janitor::clean_names()%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(NO2=mean(x1st_max_value))
+NO2_CBSA
+
+```
+
+```{r}
+setwd("C:/Users/hp/Desktop/CO/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+CO <- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE) %>%
+    mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+CO
+
+CO_county=
+  CO%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="8-HR RUN AVG END HOUR")%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(CO=mean(x1st_max_value))
+CO_county
+#1980-2023 CO by county
+
+CO_CBSA=
+  CO%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="8-HR RUN AVG END HOUR")%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(CO=mean(x1st_max_value))
+CO_CBSA
+
+```
+
+
+```{r}
+setwd("C:/Users/hp/Desktop/PM2.5/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+PM2.5<- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE) %>%
+    mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+PM2.5
+#Lack of 1980-1987 data
+
+PM2.5_county=
+  PM2.5%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="24-HR BLK AVG")%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(PM2.5=mean(arithmetic_mean))
+PM2.5_county
+
+PM2.5_CBSA=
+  PM2.5%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="24-HR BLK AVG")%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(PM2.5=mean(arithmetic_mean))
+PM2.5_CBSA
+```
+
+```{r}
+setwd("C:/Users/hp/Desktop/PM10/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+PM10<- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE) %>%
+    mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+PM10
+#Lack of 1980-1981 data
+
+
+PM10_county=
+  PM10%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="24-HR BLK AVG")%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(PM10=mean(arithmetic_mean))
+PM10_county
+
+PM10_CBSA=
+  PM10%>%
+  janitor::clean_names()%>%
+  filter(sample_duration=="24-HR BLK AVG")%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(PM10=mean(arithmetic_mean))
+PM10_CBSA
+
+```
+```{r}
+setwd("C:/Users/hp/Desktop/Pb/")
+files_list <- list.files(pattern = ".csv")  # Modify the pattern as needed
+
+Pb<- lapply(files_list, function(file) {
+  read.csv(file, stringsAsFactors = FALSE) %>%
+    mutate(State.Code = as.character(State.Code))
+}) %>%
+  bind_rows()
+Pb
+#Lack of 1980-1981 data
+
+
+Pb_county=
+  Pb%>%
+  janitor::clean_names()%>%
+  filter(parameter_code==14129)%>%
+  group_by(date_local,county_name,state_code,county_code)%>%
+  summarize(Pb=mean(arithmetic_mean))
+Pb_county
+
+Pb_CBSA=
+  Pb%>%
+  janitor::clean_names()%>%
+  filter(parameter_code==14129)%>%
+  group_by(date_local,cbsa_name,state_code)%>%
+  summarize(Pb=mean(arithmetic_mean))
+Pb_CBSA
+```
+
+```{r}
+api_url <- "https://aqs.epa.gov/data/api/list/cbsas?email=zy2378@cumc.columbia.edu&key=goldbird73"
+
+response <- GET(
+  url = api_url)
+api_data <-fromJSON(content(response, "text"))
+api_data_df<-data.frame(api_data)
+cbsa_code<-
+  api_data_df%>%
+  rename("cbsa_name"="Data.value_represented")%>%
+  rename("cbsa_code"="Data.code")%>%
+  select(cbsa_code,cbsa_name)
+cbsa_code
+```
+
+
+```{r}
+pollutant_county<-merge(merge(merge(merge(merge(merge(ozone_county,SO2_county,by =c("date_local","county_name","state_code","county_code"), all = TRUE),NO2_county,by =c("date_local","county_name","state_code","county_code"), all = TRUE),CO_county,by =c("date_local","county_name","state_code","county_code"), all = TRUE),PM2.5_county,by =c("date_local","county_name","state_code","county_code"), all = TRUE),PM10_county,by =c("date_local","county_name","state_code","county_code"), all = TRUE),Pb_county,by =c("date_local","county_name","state_code","county_code"), all = TRUE)
+
+pollutant_cbsa<-right_join(merge(merge(merge(merge(merge(merge(ozone_CBSA,SO2_CBSA,by =c("date_local","cbsa_name","state_code"), all = TRUE),NO2_CBSA,by =c("date_local","cbsa_name","state_code"), all = TRUE),CO_CBSA,by =c("date_local","cbsa_name","state_code"), all = TRUE),PM2.5_CBSA,by =c("date_local","cbsa_name","state_code"), all = TRUE),PM10_CBSA,by =c("date_local","cbsa_name","state_code"), all = TRUE),Pb_CBSA,by =c("date_local","cbsa_name","state_code"), all = TRUE),cbsa_code,by="cbsa_name")
+
+write.csv(pollutant_cbsa,file="C:/Users/hp/Desktop/pollutant_cbsa.csv",na="")
+write.csv(pollutant_county,file="C:/Users/hp/Desktop/pollutant_county.csv",na="")
+
+```
+
+
