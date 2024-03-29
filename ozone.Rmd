@@ -1,0 +1,215 @@
+---
+title: "Untitled"
+author: "zy"
+date: "3/28/2024"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+library(readxl)
+library(haven)
+library(stringr)
+library(dplyr)
+library(gstat)
+library(imputeTS)
+```
+
+
+#Calculate weighted pm2.5 for year 2007-2014
+```{r}
+##Change the path to the data file path
+population<-read.csv("/Users/huanglp/Desktop/population.csv")%>%
+  mutate(code=substr(FIPS,1,nchar(FIPS)-6))
+
+list1_2023 <- read_excel("/Users/huanglp/Desktop/list1_2023.xlsx", skip = 2)%>% janitor::clean_names()%>%
+  mutate(code=paste(fips_state_code,fips_county_code,sep=""))%>%
+  select(cbsa_code,cbsa_title,code)
+
+files.list<-list.files(file.path("/Users/huanglp/Desktop/ozone"),full.names = TRUE)
+
+##Name the file to the pollutant name
+Ozone<-lapply(files.list,function(file){
+  read.csv(file)%>%
+  mutate(FIPS=as.character(FIPS))%>%
+  mutate(code=as.numeric(substr(FIPS,1,5)))%>%
+  merge(.,list1_2023,by="code")
+})
+
+##Change the name as well
+for (i in seq_along(Ozone)){
+population1<-filter(population,year==i+2006)%>%  ##Need to adapt to different year number that needed to calculate 
+  select(FIPS,interpolated_population)
+Ozone[[i]]=
+    Ozone[[i]]%>%
+    mutate(FIPS=as.numeric(FIPS))%>%
+    left_join(.,population1,by="FIPS")
+population_cbsa=
+    Ozone[[i]]%>%
+    group_by(cbsa_code,Date)%>%
+    summarize(total_population=sum(interpolated_population))
+Ozone[[i]]=
+    Ozone[[i]]%>%
+    left_join(.,population_cbsa,by=c("cbsa_code","Date"))%>%
+    mutate(weight=interpolated_population/total_population)%>%
+    mutate(ozone_weight=ozone_daily_8hour_maximum.ppb.*weight)%>% ##Adapt the column name to the original table, as well as change the new column name as you want
+    group_by(cbsa_code,Date,cbsa_title)%>%
+    summarize(ozone_average=sum(ozone_weight)) #Change the column name 
+}
+
+
+
+output_dir <- "/Users/huanglp/Desktop/ozone 2007-2020/"
+
+for (i in seq_along(Ozone)) {
+  file_name <- paste0("ozone_", i+2006, ".csv")
+  file_path <- file.path(output_dir, file_name)
+  write.csv(Ozone[[i]], file = file_path, row.names = FALSE)
+}
+
+```
+
+
+```{r}
+files.list<-list.files(file.path("/Users/huanglp/Desktop/ozone 2011-2014"),full.names = TRUE)
+
+Ozone_2011<-lapply(files.list,function(file){
+  read.csv(file)%>%
+  mutate(FIPS=as.character(FIPS))%>%
+  mutate(code=as.numeric(substr(FIPS,1,5)))%>%
+  merge(.,list1_2023,by="code")
+})
+
+
+for (i in seq_along(Ozone_2011)){
+population1<-filter(population,year==i+2010)%>%
+  select(FIPS,interpolated_population)
+Ozone_2011[[i]]=
+    Ozone_2011[[i]]%>%
+    mutate(FIPS=as.numeric(FIPS))%>%
+    left_join(.,population1,by="FIPS")
+population_cbsa=
+    Ozone_2011[[i]]%>%
+    group_by(cbsa_code,Date)%>%
+    summarize(total_population=sum(interpolated_population))
+Ozone_2011[[i]]=
+    Ozone_2011[[i]]%>%
+    left_join(.,population_cbsa,by=c("cbsa_code","Date"))%>%
+    mutate(weight=interpolated_population/total_population)%>%
+    mutate(ozone_weight=ozone_daily_8hour_maximum.ppb.*weight)%>%
+    group_by(cbsa_code,Date,cbsa_title)%>%
+    summarize(ozone_average=sum(ozone_weight))
+}
+
+
+output_dir <- "/Users/huanglp/Desktop/ozone 2007-2020/"
+
+# Iterate over the list of data frames
+for (i in seq_along(Ozone_2011)) {
+  # Generate the file name dynamically based on the index
+  file_name <- paste0("ozone_", i+2010, ".csv")
+  
+  # Construct the full file path
+  file_path <- file.path(output_dir, file_name)
+  
+  # Write the data frame to CSV
+  write.csv(Ozone_2011[[i]], file = file_path, row.names = FALSE)
+}
+```
+
+
+#Calculate weighted pm2.5 for year 2015-2016
+```{r}
+files.list<-list.files(file.path("/Users/huanglp/Desktop/ozone 2015-2016"),full.names = TRUE)
+
+Ozone_2015<-lapply(files.list,function(file){
+  read.csv(file)%>%
+  mutate(FIPS=as.character(Loc_Label1))%>%
+  mutate(code=as.numeric(substr(Loc_Label1,1,5)))%>%
+  merge(.,list1_2023,by="code")
+})
+
+for (i in seq_along(Ozone_2015)){
+population1<-filter(population,year==i+2014)%>%
+  select(FIPS,interpolated_population)
+Ozone_2015[[i]]=
+    Ozone_2015[[i]]%>%
+    mutate(FIPS=as.numeric(FIPS))%>%
+    left_join(.,population1,by="FIPS")
+population_cbsa=
+    Ozone_2015[[i]]%>%
+    group_by(cbsa_code,Date)%>%
+    summarize(total_population=sum(interpolated_population))
+Ozone_2015[[i]]=
+    Ozone_2015[[i]]%>%
+    left_join(.,population_cbsa,by=c("cbsa_code","Date"))%>%
+    mutate(weight=interpolated_population/total_population)%>%
+    mutate(ozone_weight=Prediction*weight)%>%
+    group_by(cbsa_code,Date,cbsa_title)%>%
+    summarize(ozone_average=sum(ozone_weight))
+}
+
+
+output_dir <- "/Users/huanglp/Desktop/ozone 2007-2020/"
+
+# Iterate over the list of data frames
+for (i in seq_along(Ozone_2015)) {
+  # Generate the file name dynamically based on the index
+  file_name <- paste0("ozone_", i+2014, ".csv")
+  
+  # Construct the full file path
+  file_path <- file.path(output_dir, file_name)
+  
+  # Write the data frame to CSV
+  write.csv(Ozone_2015[[i]], file = file_path, row.names = FALSE)
+}
+```
+
+#Calculate weighted pm2.5 for year 2017-2020
+```{r}
+files.list<-list.files(file.path("/Users/huanglp/Desktop/ozone 2017-2020"),full.names = TRUE)
+
+Ozone_2017<-lapply(files.list,function(file){
+  read.csv(file)%>%
+  mutate(FIPS=as.character(FIPS))%>%
+  mutate(code=as.numeric(substr(FIPS,1,5)))%>%
+  merge(.,list1_2023,by="code")
+})
+
+for (i in seq_along(Ozone_2017)){
+population1<-filter(population,year==i+2016)%>%
+  select(FIPS,interpolated_population)
+Ozone_2017[[i]]=
+    Ozone_2017[[i]]%>%
+    mutate(FIPS=as.numeric(FIPS))%>%
+    left_join(.,population1,by="FIPS")
+population_cbsa=
+    Ozone_2017[[i]]%>%
+    group_by(cbsa_code,Date)%>%
+    summarize(total_population=sum(interpolated_population))
+Ozone_2017[[i]]=
+    Ozone_2017[[i]]%>%
+    left_join(.,population_cbsa,by=c("cbsa_code","Date"))%>%
+    mutate(weight=interpolated_population/total_population)%>%
+    mutate(ozone_weight=ozone_daily_8hour_maximum.ppb.*weight)%>%
+    group_by(cbsa_code,Date,cbsa_title)%>%
+    summarize(ozone_average=sum(ozone_weight))
+}
+
+
+output_dir <- "/Users/huanglp/Desktop/ozone 2007-2020/"
+
+# Iterate over the list of data frames
+for (i in seq_along(Ozone_2017)) {
+  # Generate the file name dynamically based on the index
+  file_name <- paste0("ozone_", i+2016, ".csv")
+  
+  # Construct the full file path
+  file_path <- file.path(output_dir, file_name)
+  
+  # Write the data frame to CSV
+  write.csv(Ozone_2017[[i]], file = file_path, row.names = FALSE)
+}
+```
